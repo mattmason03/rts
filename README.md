@@ -5,9 +5,9 @@ For dependencies, put .lib (static or import) in lib, .dll (if shared) in system
 
 Dependencies:
 
-GLFW: shared
-GLEW: shared
-GTEST: https://github.com/google/googletest
+- GLFW: shared
+- GLEW: shared
+- GTEST: https://github.com/google/googletest
   - clone repo
   - open CMakeLists.txt
   - options BUILD_SHARED_LIBS to OFF, gtest_force_shared_crt to ON
