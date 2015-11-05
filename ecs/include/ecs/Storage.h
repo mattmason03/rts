@@ -14,12 +14,10 @@ namespace ecs {
 	protected:
 		size_t GetChunkIndex(uint32_t index);
 		size_t GetOffset(uint32_t index);
-		std::vector<char*> memory_;
+		std::vector<std::unique_ptr<char[]>> memory_;
 		const size_t eltPerChunk_;
 		const size_t eltSize_;
 		const size_t chunkSize_;
-
-		void Expand();
 	};
 
 	template <typename Derived>
@@ -39,15 +37,15 @@ namespace ecs {
 	char* ArrayStore::CreateOrGet(uint32_t index) {
 		size_t idx = GetChunkIndex(index);
 		if (memory_.size() <= idx) {
-			memory_.resize(idx + 1, nullptr);
+			memory_.resize(idx + 1);
 		}
 		if (!memory_[idx]) {
-			memory_[idx] = new char[chunkSize_];
+			memory_[idx].reset(new char[chunkSize_]);
 		}
-		return memory_[idx] + GetOffset(index);
+		return memory_[idx].get() + GetOffset(index);
 	}
 
 	char* ArrayStore::Get(uint32_t index) {
-		return memory_[GetChunkIndex(index)] + GetOffset(index);
+		return memory_[GetChunkIndex(index)].get() + GetOffset(index);
 	}
 }

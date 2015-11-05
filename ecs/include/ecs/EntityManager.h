@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <bitset>
+#include <memory>
 
 #include "Constants.h"
 #include "Entity.h"
@@ -14,9 +15,17 @@ namespace ecs {
 	public:
 		EntityManager() {}
 
+		// Create an entity
 		Entity Create();
+
+		bool Valid(Entity::Id id);
+
+		// Kill entity
 		void Kill(Entity::Id id);
 
+		// For each entity that has Derived... components, runs the provided function
+		// Function should have pointer arguments of *Derived
+		// i.e. manager.ForEach<Entity::Id, Position>([&manager](Entity::Id *id, Position *pos) { pos.x += 1; manager.Kill(*id); });
 		template <typename... Derived, typename F>
 		void ForEach(F& f, Entity::Id start, Entity::Id end);
 		template <typename... Derived, typename F>
@@ -24,20 +33,30 @@ namespace ecs {
 		template <typename... Derived, typename F>
 		void ForEach(F& f);
 
-		template <typename Derived>
-		void RegisterComponent();
-
+		// Add Derived component to entity, passing DerivedArgs... to Derived constructor
+		// i.e. mananger.Add<Position>(entityId, xPos, yPos);
 		template <typename Derived, typename... DerivedArgs>
 		void Add(Entity::Id id, DerivedArgs&&... args);
 
+		// Get Derived component from entity
 		template <typename Derived>
 		Derived* Get(Entity::Id id);
 
+		// Test if entity has component
+		template <typename Derived>
+		bool Has(Entity::Id id);
+
+		// Remove Derived component from entity
 		template <typename Derived>
 		void Remove(Entity::Id id);
 
+		// Remove all entities, capacity stays same
+		void Reset();
+
+		// Total number of supported entities
 		size_t capacity();
 
+		// Total number of live entities
 		size_t size();
 
 		typedef std::bitset<MAX_COMPONENTS> ComponentMask;
@@ -47,7 +66,7 @@ namespace ecs {
 		ArrayStore* CreateOrGetStore();
 
 		uint32_t indexCounter_ = 0;
-		std::vector<ArrayStore*> componentStorage_;
+		std::vector<std::unique_ptr<ArrayStore>> componentStorage_;
 		std::vector<uint32_t> entityFreeList_;
 		std::vector<uint32_t> entityVersion_;
 		std::vector<ComponentMask> entityMasks_;

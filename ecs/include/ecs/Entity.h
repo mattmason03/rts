@@ -7,8 +7,8 @@ namespace ecs {
 	public:
 		struct Id {
 			Id() : id_(0) {}
-			explicit Id(uint64_t id) : id_(id) {}
-			Id(uint32_t index, uint32_t version) : id_(uint64_t(index) | uint64_t(index) << 32UL) {}
+			Id(uint64_t id) : id_(id) {}
+			Id(uint32_t index, uint32_t version) : id_(uint64_t(index) | uint64_t(version) << 32UL) {}
 
 			bool operator == (const Id &other) const { return id_ == other.id_; }
 			bool operator != (const Id &other) const { return id_ != other.id_; }
@@ -28,6 +28,8 @@ namespace ecs {
 
 		Entity::Id GetId();
 
+		bool Valid();
+
 		void Kill();
 
 		template <typename Derived, typename... DerivedArgs>
@@ -35,6 +37,9 @@ namespace ecs {
 
 		template <typename Derived>
 		Derived* Get();
+
+		template <typename Derived>
+		bool Has();
 
 		template <typename Derived>
 		void Remove();

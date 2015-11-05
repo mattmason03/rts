@@ -21,41 +21,41 @@ namespace ecs {
 		return Entity(this, id);
 	}
 
+	bool EntityManager::Valid(Entity::Id id) {
+		uint32_t index = id.index();
+		return entityVersion_[index] == id.version();
+	}
+
 	void EntityManager::Kill(Entity::Id id) {
+		assert(Valid(id));
 		entityFreeList_.push_back(id.index());
 		entityVersion_[id.index()]++;
 		entityMasks_[id.index()].reset();
 	}
 
 	template <typename... Derived, typename F>
-	void EntityManager::ForEach(F& f, Entity::Id start, Entity::Id end) {
+	void EntityManager::ForEach(F& f, Entity::Id first, Entity::Id last) {
 		ComponentMask mask = Unpacker<Derived...>::BuildComponentMask();
-		std::vector<ArrayStore*> pools = Unpacker<Derived...>::GetPools(*this);
-		for (size_t size = capacity(); start != end && start < size; ++start) {
+		for (uint32_t size = capacity(), start = first.index(), end = last.index(); start != end && start < size; ++start) {
 			if ((mask & entityMasks_[start]) == mask) {
-				Unpacker<Derived...>::Call(f, start, pools);
+				Unpacker<Derived...>::Call(f, start, componentStorage_);
 			}
 		}
 	}
 
 	template <typename... Derived, typename F>
 	void EntityManager::ForEach(F& f, Entity::Id start) {
-		ForEach(f, start, capacity());
+		ForEach<Derived...>(f, start, capacity());
 	}
 
 	template <typename... Derived, typename F>
 	void EntityManager::ForEach(F& f) {
-		ForEach(f, 0, capacity());
-	}
-
-	template <typename >
-	void EntityManager::RegisterComponent() {
-		Derived::Register();
-		componentStorage_[Component<Derived>::Id()] = new TypedArrayStore < Derived >();
+		ForEach<Derived...>(f, 0, capacity());
 	}
 
 	template <typename Derived, typename... DerivedArgs>
 	void EntityManager::Add(Entity::Id id, DerivedArgs&&... args) {
+		assert(Valid(id));
 		uint32_t idx = id.index();
 		entityMasks_[idx].set(Component<Derived>::Id());
 		ArrayStore* store = CreateOrGetStore<Derived>();
@@ -64,12 +64,29 @@ namespace ecs {
 
 	template <typename Derived>
 	Derived* EntityManager::Get(Entity::Id id) {
-		return (Derived*)componentStorage_[Component<Derived>::Id()]->Get(id);
+		assert(Has<Derived>(id));
+		return (Derived*)componentStorage_[Component<Derived>::Id()]->Get(id.index());
+	}
+
+	template <typename Derived>
+	bool EntityManager::Has(Entity::Id id) {
+		assert(Valid(id));
+		return entityMasks_[id.index()].test(Component<Derived>::Id());
 	}
 
 	template <typename Derived>
 	void EntityManager::Remove(Entity::Id id) {
-		entityMasks_[id].reset(Component<Derived>::Id());
+		assert(Valid(id));
+		entityMasks_[id.index()].reset(Component<Derived>::Id());
+	}
+
+	void EntityManager::Reset() {
+		entityFreeList_.clear();
+		for (size_t i = 0; i < capacity(); i++) {
+			entityMasks_[i].reset();
+			entityVersion_[i] = 0;
+			entityFreeList_.push_back(i);
+		}
 	}
 
 	size_t EntityManager::capacity() {
@@ -84,12 +101,11 @@ namespace ecs {
 	ArrayStore* EntityManager::CreateOrGetStore() {
 		size_t componentId = Component<Derived>::Id();
 		if (componentStorage_.size() <= componentId) {
-			componentStorage_.resize(componentId + 1, nullptr);
+			componentStorage_.resize(componentId + 1);
 		}
-		if (!componentStorage_[componentId]) {
-			componentStorage_[componentId] = new TypedArrayStore<Derived>();
-		}
-		return componentStorage_[componentId];
+		if (!componentStorage_[componentId])
+			componentStorage_[componentId].reset(new TypedArrayStore<Derived>());
+		return componentStorage_[componentId].get();
 	}
 
 	template <typename... Arguments>
@@ -106,7 +122,7 @@ namespace ecs {
 		}
 
 		template <typename Function, typename... UnpackedArgs>
-		static void Call(Function& function, size_t entityIndex, std::vector<ArrayStore*>& storage, UnpackedArgs... unpackedArgs) {
+		static void Call(Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Call function with all unpacked arguments
 			function(unpackedArgs...);
 		}
@@ -126,13 +142,12 @@ namespace ecs {
 		}
 
 		template <typename Function, typename... UnpackedArgs>
-		static void Call(Function& function, size_t entityIndex, std::vector<ArrayStore*>& storage, UnpackedArgs... unpackedArgs) {
+		static void Call(Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Get array store for current component type
-			ArrayStore* arrayStore = storage[Component<CurrentArg>::Id()];
 			// Retrieve component for specified entity
-			CurrentArg* component = arrayStore->Get(entityIndex);
+			CurrentArg* component = (CurrentArg*)(storage[Component<CurrentArg>::Id()]->Get(entityIndex));
 			// Add unpacked component argument and recurse
-			Unpacker<Derived...>::Call(function, entityIndex, storage, unpackedArgs..., component);
+			Unpacker<Arguments...>::Call(function, entityIndex, storage, unpackedArgs..., component);
 		}
 	};
 }
