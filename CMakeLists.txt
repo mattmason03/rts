@@ -11,9 +11,13 @@ file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h inclu
 file(GLOB_RECURSE TESTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cpp)
 file(GLOB_RECURSE ECS_SOURCE RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ecs/include/*.h)
 
+file(GLOB RTS_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h include/*.hpp)
+file(GLOB COMP_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/Components/*.h include/Components/*.hpp)
+
 # set vs source groups
 source_group(RTSSource FILES ${SOURCES})
-source_group(RTSHeaders FILES ${HEADERS})
+source_group(RTSHeaders FILES ${RTS_HEADERS})
+source_group(Components FILES ${COMP_HEADERS})
 source_group(ECS FILES ${ECS_SOURCE})
 
 # add dependencies

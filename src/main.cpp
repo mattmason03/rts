@@ -14,6 +14,7 @@
 #include "render/Batch2D.h"
 
 #include "utilities/utilities.h"
+#include "Components\PositionCurve.h"
 #include "ecs\ecs.h"
 
 static void error_callback(int error, const char* description)
