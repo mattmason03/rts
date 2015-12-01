@@ -22,10 +22,11 @@ source_group(ECS FILES ${ECS_SOURCE})
 
 # add dependencies
 
-find_package(GLEW)
-find_package(GTest)
+include(ExternalGTest.cmake)
+# find_package(GLEW)
+# find_package(GTest)
 find_package(OpenGl)
-include(GLFWConfig.cmake)
+# include(GLFWConfig.cmake)
 
 message(STATUS "${GTEST_BOTH_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES}")
 
@@ -37,8 +38,8 @@ add_subdirectory(render)
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 # link
 target_link_libraries(${PROJECT_NAME}
-	${GLFW_LIBRARIES} 
-	${GLEW_LIBRARIES}
+	#${GLFW_LIBRARIES} 
+	#${GLEW_LIBRARIES}
 	${OPENGL_LIBRARIES}
 	ecs
 	utilities
@@ -52,8 +53,9 @@ set(TEST_NAME ${PROJECT_NAME}_test)
 # create test executable
 add_executable(${TEST_NAME} ${TESTS})
 # link
+
 target_link_libraries(${TEST_NAME}
-	${GTEST_BOTH_LIBRARIES}
+	${gtest_libs}
 	ecs
 )
 target_include_directories(${TEST_NAME} PUBLIC include )

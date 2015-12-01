@@ -8,8 +8,8 @@ add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS})
 target_include_directories(${PROJECT_NAME} PUBLIC include ../include)
 target_link_libraries(
 	${PROJECT_NAME}
-	${GLFW_LIBRARIES}
-	${GLEW}
+	#${GLFW_LIBRARIES}
+	#${GLEW}
 	utilities
 	)
 
