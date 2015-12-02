@@ -22,7 +22,7 @@ source_group(ECS FILES ${ECS_SOURCE})
 
 # add dependencies
 
-include(ExternalGTest.cmake)
+include(LoadExternalProjects.cmake)
 # find_package(GLEW)
 # find_package(GTest)
 find_package(OpenGl)
