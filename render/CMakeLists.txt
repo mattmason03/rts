@@ -1,20 +1,22 @@
-set(PROJECT_NAME render)
+set(project_name render)
 
-file(GLOB TEST test/*.cpp)
-file(GLOB SOURCE src/*.cpp)
-file(GLOB HEADERS include/${PROJECT_NAME}/*.h)
+file(GLOB test test/*.cpp)
+file(GLOB source src/*.cpp)
+file(GLOB headers include/${project_name}/*.h)
 
-add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS})
-target_include_directories(${PROJECT_NAME} PUBLIC include ../include)
+add_library(${project_name} ${source} ${headers})
+add_dependencies(${project_name} glfw glew glm stb)
+target_include_directories(${project_name} PUBLIC include ${glfw_include} ${glew_include} ${glm_include} ${stb_include})
 target_link_libraries(
-	${PROJECT_NAME}
-	#${GLFW_LIBRARIES}
-	#${GLEW}
+	${project_name}
+	${OPENGL_LIBRARIES}
+	${glfw_libs}
+	${glew_libs}
 	utilities
 	)
 
-set(TEST_NAME ${PROJECT_NAME}_test)
-add_executable(${TEST_NAME} ${TEST})
-target_link_libraries(${TEST_NAME} ${GTEST_BOTH_LIBRARIES})
-
-set_property(TARGET ${TEST_NAME} PROPERTY FOLDER "test")
+set(test_name ${project_name}_test)
+add_executable(${test_name} ${test})
+add_dependencies(${test_name} gtest)
+target_include_directories(${test_name} PUBLIC ${gtest_include})
+target_link_libraries(${test_name} ${project_name} ${gtest_libs})

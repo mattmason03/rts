@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <GL/glew.h>
 
 #include "utilities/utilities.h"
 
@@ -29,11 +28,3 @@ int UtilInt() {
 void LogError(std::string prefix, std::string message){
 	std::cout << prefix << ": " << message << std::endl;
 }
-
-void LogErrorGL(std::string prefix){
-	GLenum err = glGetError();
-	while (err != GL_NO_ERROR){
-		std::cout << prefix << ": " << err << std::endl;
-		err = glGetError();
-	}
-};

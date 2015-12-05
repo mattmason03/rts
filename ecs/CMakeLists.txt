@@ -1,14 +1,17 @@
-set(PROJECT_NAME ecs)
+set(project_name ecs)
 
-file(GLOB TEST test/*.cpp)
-file(GLOB SOURCE include/ecs/*.h)
+file(GLOB test test/*.cpp)
+file(GLOB ecs_source include/ecs/*.h)
 
-add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE include ../include)
-target_sources(${PROJECT_NAME} INTERFACE ${SOURCE})
+source_group(ecs FILES ${ecs_source})
 
-set(TEST_NAME ${PROJECT_NAME}_test)
-add_executable(${TEST_NAME} ${TEST})
-target_link_libraries(${TEST_NAME} ${PROJECT_NAME} ${GTEST_BOTH_LIBRARIES})
+add_library(${project_name} INTERFACE)
+target_include_directories(${project_name} INTERFACE include)
+target_sources(${project_name} INTERFACE ${ecs_source})
 
-set_property(TARGET ${TEST_NAME} PROPERTY FOLDER "test")
+set(test_name ${project_name}_test)
+add_executable(${test_name} ${test})
+add_dependencies(${test_name} gtest)
+target_include_directories(${test_name} PUBLIC ${gtest_include})
+target_link_libraries(${test_name} ${project_name} ${gtest_libs})
+

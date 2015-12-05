@@ -15,5 +15,3 @@ std::string LoadFromFile(const std::string fileName);
 int UtilInt();
 
 void LogError(std::string prefix, std::string message);
-
-void LogErrorGL(std::string prefix);

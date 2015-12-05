@@ -1,6 +1,7 @@
 #include "render/Texture2D.h"
 
-#include <STB\stb_image.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 Texture2D::Texture2D(const std::string& filename)
 	:texture(glGenTexture())
