@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
+#include <direct.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -52,6 +53,16 @@ int main(int argc, char** argv)
 {
 	GLFWwindow* window;
 
+	std::cout << argv[0];
+
+	std::string s(argv[0]);
+
+	s[s.find_last_of('\\')] = '\0';
+
+	std::cout << s.c_str();
+
+	
+	chdir(s.c_str());
 
 	glfwSetErrorCallback(error_callback);
 
