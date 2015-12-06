@@ -27,7 +27,7 @@ void ShaderProgram::LoadShader(const std::string& filename, GLenum type){
 
 	//The maxLength includes the NULL character
 	std::vector<char> errorLog(maxLength);
-	glGetShaderInfoLog(s, maxLength, &maxLength, &errorLog[0]);
+	glGetShaderInfoLog(s, maxLength, &maxLength, errorLog.data());
 
 	std::string str(errorLog.begin(), errorLog.end());
 	printf("%s\n", str.c_str());
