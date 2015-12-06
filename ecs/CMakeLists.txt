@@ -3,8 +3,6 @@ set(project_name ecs)
 file(GLOB test test/*.cpp)
 file(GLOB ecs_source include/ecs/*.h)
 
-source_group(ecs FILES ${ecs_source})
-
 add_library(${project_name} INTERFACE)
 target_include_directories(${project_name} INTERFACE include)
 target_sources(${project_name} INTERFACE ${ecs_source})

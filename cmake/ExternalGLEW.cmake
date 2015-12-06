@@ -9,8 +9,9 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    LOG_DOWNLOAD ON)
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_if_different ${EP_PREFIX}/src/glew/bin/Release/x64/glew32.dll ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Debug/
+    LOG_DOWNLOAD ON
+    LOG_INSTALL ON)
 
 # Specify include dir
 ExternalProject_Get_Property(glew source_dir)
@@ -19,23 +20,3 @@ set(glew_include ${source_dir}/include)
 ExternalProject_Get_Property(glew binary_dir)
 set(glew_bin ${source_dir}/lib/Release/x64/glew32)
 set(glew_libs ${glew_bin}.lib)
-
-# # Add test executable target
-# add_executable(MainTest ${PROJECT_SOURCE_DIR}/src/main.cpp)
-
-# # Create dependency of MainTest on googletest
-# add_dependencies(MainTest googletest)
-
-# # Specify MainTest's link libraries
-# ExternalProject_Get_Property(googletest binary_dir)
-# if(MSVC)
-#   set(Suffix ".lib")
-# else()
-#   set(Suffix ".a")
-#   set(Pthread "-pthread")
-# endif()
-# target_link_libraries(
-#     MainTest
-#     debug ${binary_dir}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}glew${Suffix}
-#     optimized ${binary_dir}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}glew${Suffix}
-#     ${Pthread})

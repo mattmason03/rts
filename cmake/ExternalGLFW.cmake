@@ -11,6 +11,7 @@ ExternalProject_Add(
                 -DGLFW_BUILD_TESTS=OFF
                 -DGLFW_BUILD_DOCS=OFF
                 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=DebugLibs
+                -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     # Disable install step
     INSTALL_COMMAND ""
     # Wrap download, configure and build steps in a script to log output
@@ -25,23 +26,3 @@ set(glfw_include ${source_dir}/include)
 ExternalProject_Get_Property(glfw binary_dir)
 set(glfw_bin ${binary_dir}/src/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}glfw3dll)
 set(glfw_libs ${glfw_bin}.lib)
-
-# # Add test executable target
-# add_executable(MainTest ${PROJECT_SOURCE_DIR}/src/main.cpp)
-
-# # Create dependency of MainTest on googletest
-# add_dependencies(MainTest googletest)
-
-# # Specify MainTest's link libraries
-# ExternalProject_Get_Property(googletest binary_dir)
-# if(MSVC)
-#   set(Suffix ".lib")
-# else()
-#   set(Suffix ".a")
-#   set(Pthread "-pthread")
-# endif()
-# target_link_libraries(
-#     MainTest
-#     debug ${binary_dir}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}glfw${Suffix}
-#     optimized ${binary_dir}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}glfw${Suffix}
-#     ${Pthread})

@@ -23,23 +23,3 @@ set(gtest_include ${source_dir}/include)
 ExternalProject_Get_Property(gtest binary_dir)
 set(gtest_bin ${binary_dir}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest)
 set(gtest_libs ${gtest_bin}.lib ${gtest_bin}_main.lib)
-
-# # Add test executable target
-# add_executable(MainTest ${PROJECT_SOURCE_DIR}/src/main.cpp)
-
-# # Create dependency of MainTest on googletest
-# add_dependencies(MainTest googletest)
-
-# # Specify MainTest's link libraries
-# ExternalProject_Get_Property(googletest binary_dir)
-# if(MSVC)
-#   set(Suffix ".lib")
-# else()
-#   set(Suffix ".a")
-#   set(Pthread "-pthread")
-# endif()
-# target_link_libraries(
-#     MainTest
-#     debug ${binary_dir}/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest${Suffix}
-#     optimized ${binary_dir}/ReleaseLibs/${CMAKE_FIND_LIBRARY_PREFIXES}gtest${Suffix}
-#     ${Pthread})

@@ -16,7 +16,7 @@
 
 static void error_callback(int error, const char* description)
 {
-	//LOG("GLFW", "Code " + error + std::string(description));
+	LOG("GLFW", "Code " + error + std::string(description));
 }
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {

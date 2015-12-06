@@ -10,9 +10,8 @@ file(GLOB rts_headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*.h include/*
 file(GLOB components RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/Components/*.h include/Components/*.hpp)
 
 # set vs source groups
-source_group(source FILES ${sources})
-source_group(headers FILES ${rts_headers})
 source_group(components FILES ${components})
+source_group(ecs FILES ${ecs_source})
 
 # create executable 
 add_executable(${project_name} ${sources} ${headers})
@@ -23,6 +22,9 @@ target_link_libraries(${project_name}
 	utilities
 	render
 )
+add_custom_command(TARGET ${project_name} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/resources ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
+	)
 
 enable_testing()
 set(test_name ${project_name}_test)
