@@ -4,13 +4,10 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG 3.1.2
     TIMEOUT 30
-    # Force separate output paths for debug and release builds to allow easy
-    # identification of correct lib in subsequent TARGET_LINK_LIBRARIES commands
     CMAKE_ARGS -DBUILD_SHARED_LIBS=ON
                 -DGLFW_BUILD_EXAMPLES=OFF
                 -DGLFW_BUILD_TESTS=OFF
                 -DGLFW_BUILD_DOCS=OFF
-                -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=DebugLibs
                 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     # Disable install step
     INSTALL_COMMAND ""
@@ -24,5 +21,5 @@ ExternalProject_Get_Property(glfw source_dir)
 set(glfw_include ${source_dir}/include)
 
 ExternalProject_Get_Property(glfw binary_dir)
-set(glfw_bin ${binary_dir}/src/DebugLibs/${CMAKE_FIND_LIBRARY_PREFIXES}glfw3dll)
-set(glfw_libs ${glfw_bin}.lib)
+set(pref ${binary_dir}/src/${CMAKE_CFG_INTDIR})
+set(glfw_libs ${pref}/glfw3dll.lib)
