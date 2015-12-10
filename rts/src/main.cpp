@@ -4,6 +4,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <direct.h>
+#include <cstring>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -36,36 +37,21 @@ static void mouse_callback(GLFWwindow* window, int button, int action, int modif
 	}
 }
 
-glm::vec3 getV3() {
-	return glm::vec3(rand() % 1000, rand() % 1000, rand() % 1000);
-}
-
-glm::fvec2 getV2() {
-	return static_cast<glm::vec2>(getV3());
-}
-
-void testStatic(int input) {
-	static int print = input;
-	std::cout << print;
+void setExeWorkingDir(char** argv){
+	char delim = '\\';
+	char* lastDelim = strrchr(argv[0], delim);
+	*lastDelim = '\0';
+	chdir(argv[0]);
+	*lastDelim = delim;
 }
 
 int main(int argc, char** argv)
 {
+	setExeWorkingDir(argv);
+
 	GLFWwindow* window;
 
-	std::cout << argv[0];
-
-	std::string s(argv[0]);
-
-	s[s.find_last_of('\\')] = '\0';
-
-	std::cout << s.c_str();
-
-	
-	chdir(s.c_str());
-
 	glfwSetErrorCallback(error_callback);
-
 
 
 	if (!glfwInit())
