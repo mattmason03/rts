@@ -15,7 +15,8 @@ source_group(ecs FILES ${ecs_source})
 
 # create executable 
 add_executable(${project_name} ${sources} ${headers})
-target_include_directories(${project_name} PUBLIC include)
+add_dependencies(${project_name} spdlog)
+target_include_directories(${project_name} PUBLIC include ${spdlog_include})
 # link
 target_link_libraries(${project_name}
 	ecs

@@ -3,8 +3,7 @@
 
 void Timer::Start() {
 	assert(timeFunction_);
-	startTime_ += timeFunction_() - stopTime_;
-	stopTime_ = 0;
+	startTime_ += timeFunction_();
 }
 
 double Timer::Seconds() {
@@ -15,18 +14,6 @@ double Timer::Seconds() {
 bool Timer::Past(double seconds) {
 	assert(timeFunction_);
 	return timeFunction_() > seconds + startTime_;
-}
-
-void Timer::Stop() {
-	assert(timeFunction_);
-	if (!stopTime_)
-		stopTime_ = timeFunction_();
-}
-
-void Timer::Reset() {
-	assert(timeFunction_);
-	startTime_ = 0;
-	stopTime_ = 0;
 }
 
 Timer::FPtr Timer::timeFunction_ = nullptr;
