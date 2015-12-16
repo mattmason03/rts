@@ -49,7 +49,7 @@ void setExeWorkingDir(char** argv){
 
 class TestGame : public Game {
 	virtual void Update(double gametime, double timestep) {
-		if (gametime > 5)
+		if (gametime > 15)
 			End();
 	}
 };

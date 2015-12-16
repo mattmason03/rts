@@ -13,9 +13,9 @@ public:
 	virtual void Unload();
 	void End();
 
-	double secondsPerUpdate_ = 1. / 2.;
-	double secondsPerRender_ = 1. / 6.;
-	double gameSpeedMultiplier_ = 1;
+	double secondsPerUpdate_ = 1. / 20.;
+	double secondsPerRender_ = 1. / 60.;
+	double gameSpeedMultiplier_ = 1.5;
 	std::shared_ptr<spdlog::logger> console;
 
 private:
