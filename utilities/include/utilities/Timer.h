@@ -1,15 +1,18 @@
 #pragma once
 
+#include <chrono>
+
+using Seconds = std::chrono::duration<double>;
+using Clock = std::chrono::high_resolution_clock;
+using Time = std::chrono::time_point<Clock, Seconds>;
+
 class Timer {
 public:
 	void Start();
-	double Seconds();
-	bool Past(double seconds);
-
-	typedef double(*FPtr)();
-	static void SetTimeFunction(FPtr timeFunction);
+	Time Now();
+	Seconds Elapsed();
+	bool Past(Time);
 
 private:
-	static FPtr timeFunction_;
-	double startTime_ = 0;
+	Time startTime_;
 };

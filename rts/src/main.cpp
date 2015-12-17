@@ -49,13 +49,24 @@ void setExeWorkingDir(char** argv){
 
 class TestGame : public Game {
 	virtual void Update(double gametime, double timestep) {
-		if (gametime > 15)
+		if (gametime > 3)
 			End();
 	}
 };
 
+Time start;
+
+void printDiff() {
+	std::cout << Seconds(Clock::now() - start).count() << std::endl;
+}
+
 int main(int argc, char** argv)
 {
+	//start = Clock::now();
+	//for (int i = 0; i < 10000; i++) {
+	//	printDiff();
+	//}
+	
 	TestGame game;
 	game.Play();
 	//setExeWorkingDir(argv);

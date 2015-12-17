@@ -1,7 +1,9 @@
 #pragma once
-#include "utilities\Timer.h"
 #include <memory>
+
+#include "utilities\Timer.h"
 #include "spdlog\spdlog.h"
+#include "utilities\WrapMembers.h"
 
 class Game {
 public:
@@ -15,7 +17,7 @@ public:
 
 	double secondsPerUpdate_ = 1. / 20.;
 	double secondsPerRender_ = 1. / 60.;
-	double gameSpeedMultiplier_ = 1.5;
+	double gameSpeedMultiplier_ = 1;
 	std::shared_ptr<spdlog::logger> console;
 
 private:
@@ -28,7 +30,17 @@ private:
 
 	bool gameOver_ = false;
 	Timer timer_;
-	double lastUpdate_ = 0;
-	double lastRender_ = 0;
-	double gameTime_ = 0;
+	Time nextUpdate_;
+	Time nextRender_;
+	Seconds gameTime_;
+
+	// used for logging
+	friend class WrapMemberFunctions<Game>;
+	void LogMethodStart_();
+	void LogMethodEnd_();
+	WrapMemberFunctions<Game> instrument_ = WrapMemberFunctions<Game>(this, &Game::LogMethodStart_, &Game::LogMethodEnd_);
+
+	std::string methodName_;
+	Time methodStart_;
+	Time methodEnd_;
 };
