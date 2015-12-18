@@ -3,87 +3,79 @@
 #include "Game.h"
 #include "GLFW\glfw3.h"
 
+Game::Game()
+	:Game(Millis(1000 / 20), Millis(1000 / 60)) {}
+
+Game::Game(Duration updateStep, Duration renderStep)
+	: updateStep{ updateStep }, renderStep{ renderStep } {}
+
 void Game::Play() {
 	Load_();
 	while (!gameOver_) {
-
-		if (timer_.Past(nextUpdate_)) {
+		if (Clock::now() > nextUpdate_) {
 			Update_();
 		}
 
-		if (timer_.Past(nextRender_)) {
+		if (Clock::now() > nextRender_) {
 			Input_();
 			Render_();
 		}
 
-		auto sleepTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::min(nextRender_, nextUpdate_) - timer_.Now());
-		console->info("Sleeping for {}s", Seconds(sleepTime).count());
-		std::this_thread::sleep_for(sleepTime);
+		Instrument_("Sleep", &Game::Sleep_, (std::min(nextRender_, nextUpdate_) - Clock::now()));
 	}
 	Unload_();
 }
 
 void Game::Load_() {
 	gameOver_ = false;
-	gameTime_ = Seconds(0);
-	timer_.Start();
-	nextUpdate_ = nextRender_ = timer_.Now();
+	gameTime_ = Duration(0);
+	nextUpdate_ = nextRender_ = Clock::now();
 
 	console = spdlog::stdout_logger_mt("game");
 	glfwInit();
 
-	methodName_ = __FUNCTION__;
-	instrument_->Load();
+	Instrument_("Load", &Game::Load);
 }
 
 void Game::Load() {}
 
 void Game::Input_() {
-	methodName_ = __FUNCTION__;
-	instrument_->Input(GameTime_());
+	Instrument_("Input", &Game::Input, GameTime_());
 }
 
-void Game::Input(double gametime) {}
+void Game::Input(Duration gameTime) {}
 
 void Game::Update_() {
-	nextUpdate_ = timer_.Now() + Seconds(secondsPerUpdate_);
-	methodName_ = __FUNCTION__;
-	instrument_->Update(gameTime_.count(), secondsPerUpdate_ * gameSpeedMultiplier_);
-	gameTime_ = gameTime_ + Seconds(secondsPerUpdate_) * gameSpeedMultiplier_;
+	nextUpdate_ = Clock::now() + updateStep;
+	auto timeStep = std::chrono::duration_cast<Duration>(gameSpeedMultiplier * updateStep);
+	Instrument_("Update", &Game::Update, gameTime_, timeStep);
+	gameTime_ = gameTime_ + timeStep;
 }
 
-void Game::Update(double gametime, double timestep) {}
+void Game::Update(Duration gameTime, Duration timeStep) {}
 
 void Game::Render_() {
-	nextRender_ = timer_.Now() + Seconds(secondsPerRender_);
-	methodName_ = __FUNCTION__;
-	instrument_->Render(GameTime_());
+	nextRender_ = Clock::now() + renderStep;
+	Instrument_("Render", &Game::Render, GameTime_());
 }
 
-void Game::Render(double gametime) {}
+void Game::Render(Duration gameTime) {}
 
 void Game::Unload_() {
-	methodName_ = __FUNCTION__;
-	instrument_->Unload();
+	Instrument_("Unload", &Game::Unload);
 	glfwTerminate();
 }
 void Game::Unload() {}
 
 void Game::End() {
-	console->info("{:16}", __FUNCTION__);
+	console->info("{:8}", "End");
 	gameOver_ = true;
 }
 
-double Game::GameTime_() {
-	return (gameTime_ + (timer_.Now() - nextUpdate_) * gameSpeedMultiplier_).count();
+Game::Duration Game::GameTime_() {
+	return gameTime_ + std::chrono::duration_cast<Duration>((Clock::now() - nextUpdate_) * gameSpeedMultiplier);
 }
 
-void Game::LogMethodStart_() {
-	methodStart_ = timer_.Now();
-	console->info("{:16} Begin", methodName_);
-}
-
-void Game::LogMethodEnd_() {
-	methodEnd_ = timer_.Now();
-	console->info("{:16} Elapsed: {:5.4f}", methodName_, Seconds(methodEnd_ - methodStart_).count());
+void Game::Sleep_(Duration duration) {
+	std::this_thread::sleep_for(duration);
 }

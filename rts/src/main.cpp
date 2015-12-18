@@ -48,17 +48,11 @@ void setExeWorkingDir(char** argv){
 }
 
 class TestGame : public Game {
-	virtual void Update(double gametime, double timestep) {
-		if (gametime > 3)
+	virtual void Update(Game::Duration gameTime, Game::Duration timeStep) {
+		if (std::chrono::duration_cast<std::chrono::seconds>(gameTime).count() > 3)
 			End();
 	}
 };
-
-Time start;
-
-void printDiff() {
-	std::cout << Seconds(Clock::now() - start).count() << std::endl;
-}
 
 int main(int argc, char** argv)
 {
@@ -68,6 +62,8 @@ int main(int argc, char** argv)
 	//}
 	
 	TestGame game;
+	game.renderStep = Game::Millis(500);
+	game.updateStep = Game::Millis(1000);
 	game.Play();
 	//setExeWorkingDir(argv);
 
