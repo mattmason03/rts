@@ -79,9 +79,13 @@ TEST_F(EntityManagerTest, ComponentOverwrite) {
 TEST_F(EntityManagerTest, ComponentSimpleIteration) {
 	ecs::Entity e = manager.Create();
 
-	manager.ForEach<ecs::Entity::Id>([&](ecs::Entity::Id *id) {
+	manager.ForEach_<ecs::Entity::Id*>([&](ecs::Entity::Id *id) {
 		EXPECT_EQ(e.GetId(), *id);
 	});
+}
+
+void test(ecs::Entity::Id *id) {
+	int x = 4;
 }
 
 TEST_F(EntityManagerTest, ComponentFilter) {
@@ -95,19 +99,24 @@ TEST_F(EntityManagerTest, ComponentFilter) {
 	e.Add<char>('b');
 
 	int count = 0;
-	manager.ForEach<ecs::Entity::Id>([&](ecs::Entity::Id *id) {
+	manager.ForEach([&](ecs::Entity::Id *id) {
 		count++;
 	});
+	//manager.ForEach<ecs::Entity::Id>([&](ecs::Entity::Id *id) {
+	//	count++;
+	//});
 	EXPECT_EQ(count, 3);
 
 	count = 0;
-	manager.ForEach<char>([&](char* c) {
+
+
+	manager.ForEach_<char*>([&](char* c) {
 		count++;
 	});
 	EXPECT_EQ(count, 2);
 
 	count = 0;
-	manager.ForEach<char, int>([&](char* c, int* i) {
+	manager.ForEach_<char*, int*>([&](char* c, int* i) {
 		count++;
 	});
 	EXPECT_EQ(count, 1);

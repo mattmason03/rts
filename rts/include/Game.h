@@ -52,6 +52,6 @@ private:
 		Time start = Clock::now();
 		console->info("{:8} Begin", functionName);
 		(this->*func)(std::forward<Args>(args)...);
-		console->info("{:8} Elapsed: {:3}us", functionName, std::chrono::duration_cast<Micros>(Clock::now() - start).count());
+		console->info("{:8} Elapsed: {:4.3}ms", functionName, std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(Clock::now() - start).count());
 	};
 };

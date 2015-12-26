@@ -4,6 +4,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <direct.h>
+#include <functional>
 #include <cstring>
 
 #include <GL/glew.h>
@@ -56,14 +57,9 @@ class TestGame : public Game {
 
 int main(int argc, char** argv)
 {
-	//start = Clock::now();
-	//for (int i = 0; i < 10000; i++) {
-	//	printDiff();
-	//}
-	
 	TestGame game;
-	game.renderStep = Game::Millis(500);
-	game.updateStep = Game::Millis(1000);
+	game.renderStep = Game::Millis(50);
+	game.updateStep = Game::Millis(100);
 	game.Play();
 	//setExeWorkingDir(argv);
 

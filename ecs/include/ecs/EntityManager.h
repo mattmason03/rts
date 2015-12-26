@@ -3,6 +3,7 @@
 #include <vector>
 #include <bitset>
 #include <memory>
+#include <functional>
 
 #include "Constants.h"
 #include "Entity.h"
@@ -26,12 +27,16 @@ namespace ecs {
 		// For each entity that has Derived... components, runs the provided function
 		// Function should have pointer arguments of *Derived
 		// i.e. manager.ForEach<Entity::Id, Position>([&manager](Entity::Id *id, Position *pos) { pos.x += 1; manager.Kill(*id); });
+
+		template <typename F>
+		void ForEach(F f);
+
 		template <typename... Derived, typename F>
-		void ForEach(F& f, Entity::Id start, Entity::Id end);
+		void ForEach_(F& f, Entity::Id start, Entity::Id end);
 		template <typename... Derived, typename F>
-		void ForEach(F& f, Entity::Id start);
+		void ForEach_(F& f, Entity::Id start);
 		template <typename... Derived, typename F>
-		void ForEach(F& f);
+		void ForEach_(F& f);
 
 		// Add Derived component to entity, passing DerivedArgs... to Derived constructor
 		// i.e. mananger.Add<Position>(entityId, xPos, yPos);

@@ -34,7 +34,7 @@ namespace ecs {
 	}
 
 	template <typename... Derived, typename F>
-	void EntityManager::ForEach(F& f, Entity::Id first, Entity::Id last) {
+	void EntityManager::ForEach_(F& f, Entity::Id first, Entity::Id last) {
 		ComponentMask mask = Unpacker<Derived...>::BuildComponentMask();
 		for (uint32_t size = capacity(), start = first.index(), end = last.index(); start != end && start < size; ++start) {
 			if ((mask & entityMasks_[start]) == mask) {
@@ -44,13 +44,33 @@ namespace ecs {
 	}
 
 	template <typename... Derived, typename F>
-	void EntityManager::ForEach(F& f, Entity::Id start) {
+	void EntityManager::ForEach_(F& f, Entity::Id start) {
 		ForEach<Derived...>(f, start, capacity());
 	}
 
 	template <typename... Derived, typename F>
-	void EntityManager::ForEach(F& f) {
+	void EntityManager::ForEach_(F& f) {
 		ForEach<Derived...>(f, 0, capacity());
+	}
+
+	template <typename T>
+	struct f_trait
+		: public f_trait<decltype(&T::operator())>
+	{};
+
+	template <typename C, typename R, typename... Args>
+	struct f_trait<R(C::*)(Args...) const>
+	{
+		template <typename T>
+		void Unwrap(EntityManager* manager, T f) {
+			manager->ForEach<Args...>(f);
+		}
+	};
+
+	template <typename F>
+	void EntityManager::ForEach(F f) {
+		f_trait<F> trait;
+		trait.Unwrap(this, f);
 	}
 
 	template <typename Derived, typename... DerivedArgs>
@@ -133,11 +153,12 @@ namespace ecs {
 	struct Unpacker < CurrentArg, Arguments... >
 	{
 	public:
+		using curArg = typename std::remove_pointer<CurrentArg>::type;
 		static EntityManager::ComponentMask BuildComponentMask() {
 			// Build a mask from remaining arguments
 			EntityManager::ComponentMask mask = Unpacker<Arguments...>::BuildComponentMask();
 			// Set the mask for current argument
-			mask.set(Component<CurrentArg>::Id());
+			mask.set(Component<curArg>::Id());
 			return mask;
 		}
 
@@ -145,7 +166,7 @@ namespace ecs {
 		static void Call(Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Get array store for current component type
 			// Retrieve component for specified entity
-			CurrentArg* component = (CurrentArg*)(storage[Component<CurrentArg>::Id()]->Get(entityIndex));
+			curArg* component = (curArg*)(storage[Component<curArg>::Id()]->Get(entityIndex));
 			// Add unpacked component argument and recurse
 			Unpacker<Arguments...>::Call(function, entityIndex, storage, unpackedArgs..., component);
 		}
