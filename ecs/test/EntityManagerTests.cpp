@@ -99,7 +99,7 @@ TEST_F(EntityManagerTest, ComponentFilter) {
 	e.Add<char>('b');
 
 	int count = 0;
-	manager.ForEach([&](ecs::Entity::Id *id) {
+	manager.ForAll([&](ecs::Entity::Id *id) {
 		count++;
 	});
 	//manager.ForEach<ecs::Entity::Id>([&](ecs::Entity::Id *id) {

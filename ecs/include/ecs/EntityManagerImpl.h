@@ -45,12 +45,12 @@ namespace ecs {
 
 	template <typename... Derived, typename F>
 	void EntityManager::ForEach_(F& f, Entity::Id start) {
-		ForEach<Derived...>(f, start, capacity());
+		ForEach_<Derived...>(f, start, capacity());
 	}
 
 	template <typename... Derived, typename F>
 	void EntityManager::ForEach_(F& f) {
-		ForEach<Derived...>(f, 0, capacity());
+		ForEach_<Derived...>(f, 0, capacity());
 	}
 
 	template <typename T>
@@ -63,12 +63,12 @@ namespace ecs {
 	{
 		template <typename T>
 		void Unwrap(EntityManager* manager, T f) {
-			manager->ForEach<Args...>(f);
+			manager->ForEach_<Args...>(f);
 		}
 	};
 
 	template <typename F>
-	void EntityManager::ForEach(F f) {
+	void EntityManager::ForAll(F f) {
 		f_trait<F> trait;
 		trait.Unwrap(this, f);
 	}

@@ -29,7 +29,7 @@ namespace ecs {
 		// i.e. manager.ForEach<Entity::Id, Position>([&manager](Entity::Id *id, Position *pos) { pos.x += 1; manager.Kill(*id); });
 
 		template <typename F>
-		void ForEach(F f);
+		void ForAll(F f);
 
 		template <typename... Derived, typename F>
 		void ForEach_(F& f, Entity::Id start, Entity::Id end);
