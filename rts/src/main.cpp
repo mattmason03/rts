@@ -17,7 +17,12 @@
 #include "Components\PositionCurve.h"
 #include "ecs\ecs.h"
 
+#include "rxcpp\rx.hpp"
+
 #include "Game.h"
+
+namespace rx = rxcpp;
+namespace rxu = rxcpp::util;
 
 static void error_callback(int error, const char* description)
 {
@@ -176,6 +181,11 @@ public:
 
 int main(int argc, char** argv)
 {
+	auto r = rx::observable<>::from(1, 2, 3, 3, 3, 4, 5, 5).distinct();
+	r.subscribe([](int v) { std::cout << v << std::endl; });
+
+	return 0;
+
 	TestGame game;
 	game.renderStep = Game::Millis(50);
 	game.updateStep = Game::Millis(100);
