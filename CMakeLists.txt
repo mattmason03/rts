@@ -7,9 +7,5 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 # add dependencies
 include(cmake/LoadExternalProjects.cmake)
-find_package(OpenGl)
 
-add_subdirectory(ecs ${PROJECT_BINARY_DIR}/ecs)
-add_subdirectory(utilities ${PROJECT_BINARY_DIR}/utilities)
-add_subdirectory(render ${PROJECT_BINARY_DIR}/render)
 add_subdirectory(rts ${PROJECT_BINARY_DIR}/rts)

@@ -1,8 +1,8 @@
-# Add glm
+# Add stb
 ExternalProject_Add(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 0.9.7.1
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
     TIMEOUT 30
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
@@ -13,5 +13,5 @@ ExternalProject_Add(
 )
 
 # Specify include dir
-ExternalProject_Get_Property(glm source_dir)
-set(glm_include ${source_dir})
+getLibProps(stb)
+setLibVars(${source_dir})

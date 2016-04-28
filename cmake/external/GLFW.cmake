@@ -17,9 +17,6 @@ ExternalProject_Add(
     LOG_BUILD ON)
 
 # Specify include dir
-ExternalProject_Get_Property(glfw source_dir)
-set(glfw_include ${source_dir}/include)
+getLibProps(glfw)
+setLibVars(${source_dir}/include ${binary_dir}/src/${CMAKE_CFG_INTDIR}/glfw3dll.lib)
 
-ExternalProject_Get_Property(glfw binary_dir)
-set(pref ${binary_dir}/src/${CMAKE_CFG_INTDIR})
-set(glfw_libs ${pref}/glfw3dll.lib)

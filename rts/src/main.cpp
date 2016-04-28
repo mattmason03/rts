@@ -85,7 +85,7 @@ struct Sides {
 class Selector {
 public: 
 	struct Selected {
-		bool selected;
+		bool selected = true;
 	};
 
 	ecs::EntityManager* manager;
@@ -93,17 +93,27 @@ public:
 
 	Selector(ecs::EntityManager* manager) : manager{ manager } {};
 
+	glm::dvec2 GetCursorPos() {
+		glm::dvec2 screenPos;
+		glfwGetCursorPos(window, &screenPos.x, &screenPos.y);
+		screenPos /= 320;
+		screenPos.x -= 1;
+		screenPos.y -= 1;
+		screenPos.y *= -1;
+		return screenPos;
+	}
+
 	void HandleClick() {
 		int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 		if (state == GLFW_PRESS) {
-			glm::dvec2 screenPos;
-			glfwGetCursorPos(window, &screenPos.x, &screenPos.y);
-			screenPos /= 320;
-			screenPos.x -= 1;
-			screenPos.y -= 1;
-			screenPos.y *= -1;
-			std::cout << "click" << screenPos.x << screenPos.y << std::endl;
-			FindEntity(screenPos);
+			FindEntity(GetCursorPos());
+		}
+
+		state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+		if (state == GLFW_PRESS) {
+			for (auto &id : selectedEntities) {
+				manager->Get<Position>(*id)->pos = GetCursorPos();
+			}
 		}
 	}
 
@@ -114,7 +124,9 @@ public:
 		selectedEntities.clear();
 		manager->ForAll([this,&screenPos](ecs::Entity::Id *id, Position *pos) {
 			std::cout << "Selected" << pos->pos.x << pos->pos.y << std::endl;
-			if (glm::distance(pos->pos, screenPos) < .1f) {
+			auto delta = pos->pos - screenPos;
+			auto distSquared = glm::dot(delta, delta);
+			if (distSquared < .1f) {
 				manager->Add<Selected>(*id);
 				selectedEntities.push_back(id);
 			}
@@ -140,7 +152,7 @@ public:
 
 	void Update(Game::Duration gameTime, Game::Duration timeStep) override {
 		selector.HandleClick();
-		if (std::chrono::duration_cast<std::chrono::seconds>(gameTime).count() > 3)
+		if (std::chrono::duration_cast<std::chrono::seconds>(gameTime).count() > 10)
 			End();
 	}
 

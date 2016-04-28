@@ -12,9 +12,5 @@ ExternalProject_Add(
     LOG_INSTALL ON)
 
 # Specify include dir
-ExternalProject_Get_Property(glew source_dir)
-set(glew_include ${source_dir}/include)
-
-ExternalProject_Get_Property(glew binary_dir)
-set(glew_bin ${source_dir}/lib/Release/x64/glew32)
-set(glew_libs ${glew_bin}.lib)
+getLibProps(glew)
+setLibVars(${source_dir}/include ${source_dir}/lib/Release/x64/glew32.lib)

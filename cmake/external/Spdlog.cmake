@@ -13,6 +13,6 @@ ExternalProject_Add(
 )
 
 # Specify include dir
-ExternalProject_Get_Property(spdlog source_dir)
-set(spdlog_include ${source_dir}/include)
+getLibProps(spdlog)
+setLibVars(${source_dir}/include)
 
