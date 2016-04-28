@@ -128,7 +128,6 @@ public:
 		}
 		selectedEntities.clear();
 		manager->ForAll([this,&screenPos](ecs::Entity::Id *id, Position *pos) {
-			std::cout << "Selected" << pos->pos.x << pos->pos.y << std::endl;
 			auto delta = pos->pos - screenPos;
 			auto distSquared = glm::dot(delta, delta);
 			if (distSquared < .1f) {
@@ -166,7 +165,6 @@ public:
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		manager.ForAll([this](ecs::Entity::Id *id, Position *pos, Sides *sides) {
-			std::cout << pos->pos.x << pos->pos.x << sides->sides << std::endl;
 			glColor3f(0, 1, 1);
 			if (manager.Has<Selector::Selected>(*id)) {
 				glColor3f(1, 1, 0);
@@ -179,12 +177,33 @@ public:
 	}
 };
 
+struct mouseInfo {
+	int button, action, mods;
+};
+
+rx::subjects::subject<mouseInfo> sub;
+
+void mouseCb(GLFWwindow* window, int b, int a, int m) {
+	sub.get_subscriber().on_next(mouseInfo{ b,a,m });
+}
+
 int main(int argc, char** argv)
 {
-	auto r = rx::observable<>::from(1, 2, 3, 3, 3, 4, 5, 5).distinct();
-	r.subscribe([](int v) { std::cout << v << std::endl; });
+	spdlog::set_level(spdlog::level::err);
+	auto clicks = sub.get_observable();
+	clicks.publish();
+	clicks.subscribe([](mouseInfo m) { 
+		std::cout << "mouse event: " << m.button << m.action << m.mods << std::endl; 
+	});
 
-	return 0;
+	clicks.filter([](const mouseInfo& m) { return m.action == GLFW_RELEASE; })
+		.buffer_with_time_or_count(std::chrono::milliseconds(1000), 2, rx::observe_on_event_loop())
+		.filter([](const std::vector<mouseInfo> &v) { return v.size() == 2; })
+		.subscribe(
+			[](std::vector<mouseInfo> &v) {
+				std::cout << "double click" << std::endl;
+			}
+		);
 
 	TestGame game;
 	game.renderStep = Game::Millis(50);
@@ -218,6 +237,8 @@ int main(int argc, char** argv)
 	}
 
 	std::cout << glGetString(GL_VERSION) << std::endl;
+
+	glfwSetMouseButtonCallback(window, &mouseCb);
 
 	//Batch2D batch;
 
