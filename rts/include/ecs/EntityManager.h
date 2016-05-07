@@ -24,35 +24,35 @@ namespace ecs {
 		// Kill entity
 		void Kill(Entity::Id id);
 
-		// For each entity that has Derived... components, runs the provided function
-		// Function should have pointer arguments of *Derived
-		// i.e. manager.ForEach<Entity::Id, Position>([&manager](Entity::Id *id, Position *pos) { pos.x += 1; manager.Kill(*id); });
+		// For each entity that has Component... components, runs the provided function
+		// Function should have Component& args
+		// i.e. manager.ForEach<Entity::Id, Position>([&manager](Entity::Id& id, Position& pos) { pos.x += 1; manager.Kill(*id); });
 
 		template <typename F>
 		void ForAll(F f);
 
-		template <typename... Derived, typename F>
+		template <typename... Component, typename F>
 		void ForEach_(F& f, Entity::Id start, Entity::Id end);
-		template <typename... Derived, typename F>
+		template <typename... Component, typename F>
 		void ForEach_(F& f, Entity::Id start);
-		template <typename... Derived, typename F>
+		template <typename... Component, typename F>
 		void ForEach_(F& f);
 
-		// Add Derived component to entity, passing DerivedArgs... to Derived constructor
+		// Add Component component to entity, passing ComponentArgs... to Component constructor
 		// i.e. mananger.Add<Position>(entityId, xPos, yPos);
-		template <typename Derived, typename... DerivedArgs>
-		void Add(Entity::Id id, DerivedArgs&&... args);
+		template <typename Component, typename... ComponentArgs>
+		void Add(Entity::Id id, ComponentArgs&&... args);
 
-		// Get Derived component from entity
-		template <typename Derived>
-		Derived* Get(Entity::Id id);
+		// Get Component component from entity
+		template <typename Component>
+		Component& Get(Entity::Id id);
 
 		// Test if entity has component
-		template <typename Derived>
+		template <typename Component>
 		bool Has(Entity::Id id);
 
-		// Remove Derived component from entity
-		template <typename Derived>
+		// Remove Component component from entity
+		template <typename Component>
 		void Remove(Entity::Id id);
 
 		// Remove all entities, capacity stays same
@@ -67,7 +67,7 @@ namespace ecs {
 		typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 
 	private:
-		template <typename Derived>
+		template <typename Component>
 		ArrayStore* CreateOrGetStore();
 
 		uint32_t indexCounter_ = 0;

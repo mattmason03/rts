@@ -24,7 +24,7 @@ namespace ecs {
 
 		Entity(EntityManager* manager, Entity::Id id) : manager_(manager), id_(id) {}
 		Entity(const Entity &other) = default;
-		Entity &operator = (const Entity &other) = default;
+		Entity & operator=(const Entity&) = default;
 
 		Entity::Id GetId();
 
@@ -32,17 +32,17 @@ namespace ecs {
 
 		void Kill();
 
-		template <typename Derived, typename... DerivedArgs>
-		void Add(DerivedArgs&&... args);
+		template <typename Component, typename... ComponentArgs>
+		Entity& Add(ComponentArgs&&... args);
 
-		template <typename Derived>
-		Derived* Get();
+		template <typename Component>
+		Component& Get();
 
-		template <typename Derived>
+		template <typename Component>
 		bool Has();
 
-		template <typename Derived>
-		void Remove();
+		template <typename Component>
+		Entity& Remove();
 
 	private:
 		Entity::Id id_;

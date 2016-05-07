@@ -16,24 +16,26 @@ namespace ecs {
 		manager_->Kill(id_);
 	}
 
-	template <typename Derived, typename... DerivedArgs>
-	void Entity::Add(DerivedArgs&&... args) {
-		manager_->Add<Derived>(id_, args...);
+	template <typename Component, typename... ComponentArgs>
+	Entity& Entity::Add(ComponentArgs&&... args) {
+		manager_->Add<Component>(id_, args...);
+		return *this;
 	}
 
-	template <typename Derived>
-	Derived* Entity::Get() {
-		return manager_->Get<Derived>(id_);
+	template <typename Component>
+	Component& Entity::Get() {
+		return manager_->Get<Component>(id_);
 	}
 
-	template <typename Derived>
+	template <typename Component>
 	bool Entity::Has() {
-		return manager_->Has<Derived>(id_);
+		return manager_->Has<Component>(id_);
 	}
 
-	template <typename Derived>
-	void Entity::Remove() {
-		manager_->Remove<Derived>(id_);
+	template <typename Component>
+	Entity& Entity::Remove() {
+		manager_->Remove<Component>(id_);
+		return *this;
 	}
 }
 

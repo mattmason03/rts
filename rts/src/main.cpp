@@ -71,22 +71,22 @@ public:
 	MovementSystem(ecs::EntityManager* manager) : manager{ manager } {};
 
 	void Update() {
-		manager->ForAll([this](ecs::Entity* entity, Transform* t, Destination* d) {
-			auto orientation = t->dir * glm::dvec3(1., 0., 0.);
-			auto angle = glm::angle(glm::normalize(orientation), glm::normalize(d->pos - t->pos));
+		manager->ForAll([this](ecs::Entity& entity, Transform& t, Destination& d) {
+			auto orientation = t.dir * glm::dvec3(1., 0., 0.);
+			auto angle = glm::angle(glm::normalize(orientation), glm::normalize(d.pos - t.pos));
 
 			if (angle > 0.001) {
 				if (angle > .1)
 					angle = .1;
-				t->dir *= glm::angleAxis(angle, glm::dvec3(0., 0., 1.));
+				t.dir *= glm::angleAxis(angle, glm::dvec3(0., 0., 1.));
 			}
 			else {
-				if (glm::distance(t->pos, d->pos) < .05) {
-					t->pos = d->pos;
-					entity->Remove<Destination>();
+				if (glm::distance(t.pos, d.pos) < .05) {
+					t.pos = d.pos;
+					entity.Remove<Destination>();
 				}
 				else {
-					t->pos += .05 * orientation;
+					t.pos += .05 * orientation;
 				}
 			}
 		});
@@ -102,7 +102,7 @@ public:
 	};
 
 	ecs::EntityManager* manager;
-	std::vector<ecs::Entity::Id*> selectedEntities;
+	std::vector<ecs::Entity::Id> selectedEntities;
 
 	Selector(ecs::EntityManager* manager) : manager{ manager } {};
 
@@ -113,7 +113,7 @@ public:
 		Input::rightClicks.subscribe([this](MouseInfo& info) {
 			for (auto& id : selectedEntities) {
 				auto pos = TranslatePos(glm::dvec2(info.position));
-				manager->Add<Destination>(*id, Destination{ glm::dvec3(pos, 0.) });
+				manager->Add<Destination>(id, Destination{ glm::dvec3(pos, 0.) });
 			}
 		});
 	}
@@ -133,14 +133,14 @@ public:
 
 	void FindEntity(glm::dvec2 screenPos) {
 		for (auto &id : selectedEntities) {
-			manager->Remove<Selected>(*id);
+			manager->Remove<Selected>(id);
 		}
 		selectedEntities.clear();
-		manager->ForAll([this, &screenPos](ecs::Entity::Id *id, Transform *t) {
-			auto delta = -screenPos + glm::dvec2(t->pos);
+		manager->ForAll([this, &screenPos](ecs::Entity::Id& id, Transform& t) {
+			auto delta = -screenPos + glm::dvec2(t.pos);
 			auto distSquared = glm::dot(delta, delta);
 			if (distSquared < .1f) {
-				manager->Add<Selected>(*id);
+				manager->Add<Selected>(id);
 				selectedEntities.push_back(id);
 			}
 		});
@@ -157,12 +157,12 @@ public:
 	TestGame() : selector(&manager), movement(&manager) {};
 
 	void Load() override {
-		auto unit = manager.Create();
-		unit.Add<Transform>(Transform{ glm::angleAxis(0., glm::dvec3(0, 0, 1)), glm::dvec3(0,0,0) });
-		unit.Add<Sides>(4);
-		unit = manager.Create();
-		unit.Add<Transform>(Transform{ glm::angleAxis(3.14, glm::dvec3(0, 0, 1)), glm::dvec3(.5,.5,0) });
-		unit.Add<Sides>(5);
+		manager.Create()
+			.Add<Transform>(Transform{ glm::angleAxis(0., glm::dvec3(0, 0, 1)), glm::dvec3(0,0,0) })
+			.Add<Sides>(4);
+		manager.Create()
+			.Add<Transform>(Transform{ glm::angleAxis(3.14, glm::dvec3(0, 0, 1)), glm::dvec3(.5,.5,0) })
+			.Add<Sides>(5);
 
 		Input::RegisterCallbacks(window);
 
@@ -179,12 +179,12 @@ public:
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		manager.ForAll([this](ecs::Entity* entity, Transform *t, Sides *sides) {
+		manager.ForAll([this](ecs::Entity& entity, Transform& t, Sides& sides) {
 			glColor3f(0, 1, 1);
-			if (entity->Has<Selector::Selected>()) {
+			if (entity.Has<Selector::Selected>()) {
 				glColor3f(1, 1, 0);
 			}
-			drawHollowCircle(t->pos.x, t->pos.y, .1f, glm::angle(t->dir), sides->sides);
+			drawHollowCircle(t.pos.x, t.pos.y, .1f, glm::angle(t.dir), sides.sides);
 		});
 
 		glfwSwapBuffers(window);
