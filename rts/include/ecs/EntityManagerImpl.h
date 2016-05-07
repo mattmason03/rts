@@ -2,6 +2,8 @@
 
 #include "EntityManager.h"
 #include "Component.h"
+#include <typeinfo>
+#include <iostream>
 
 namespace ecs {
 	Entity EntityManager::Create() {
@@ -38,7 +40,7 @@ namespace ecs {
 		ComponentMask mask = Unpacker<Derived...>::BuildComponentMask();
 		for (uint32_t size = capacity(), start = first.index(), end = last.index(); start != end && start < size; ++start) {
 			if ((mask & entityMasks_[start]) == mask) {
-				Unpacker<Derived...>::Call(f, start, componentStorage_);
+				Unpacker<Derived...>::Call(this, f, start, componentStorage_);
 			}
 		}
 	}
@@ -142,7 +144,7 @@ namespace ecs {
 		}
 
 		template <typename Function, typename... UnpackedArgs>
-		static void Call(Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
+		static void Call(EntityManager * manager, Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Call function with all unpacked arguments
 			function(unpackedArgs...);
 		}
@@ -153,22 +155,36 @@ namespace ecs {
 	struct Unpacker < CurrentArg, Arguments... >
 	{
 	public:
-		using curArg = typename std::remove_pointer<CurrentArg>::type;
+		using requestedType = typename std::remove_pointer<CurrentArg>::type;
 		static EntityManager::ComponentMask BuildComponentMask() {
 			// Build a mask from remaining arguments
 			EntityManager::ComponentMask mask = Unpacker<Arguments...>::BuildComponentMask();
 			// Set the mask for current argument
-			mask.set(Component<curArg>::Id());
+			mask.set(Component<requestedType>::Id());
 			return mask;
 		}
 
 		template <typename Function, typename... UnpackedArgs>
-		static void Call(Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
+		static void Call(EntityManager * manager, Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Get array store for current component type
 			// Retrieve component for specified entity
-			curArg* component = (curArg*)(storage[Component<curArg>::Id()]->Get(entityIndex));
+			requestedType* component;
+			if (std::is_same<requestedType, Entity>()) {
+				auto entityId = (Entity::Id*)storage[0]->Get(entityIndex);
+				// needs cast to satisfy compiler, lol
+				// MEM LEAK!!!
+				component = (requestedType*)new Entity(manager, *entityId);
+			}
+			else {
+				component = (requestedType*)(storage[Component<requestedType>::Id()]->Get(entityIndex));
+			}
+			
 			// Add unpacked component argument and recurse
-			Unpacker<Arguments...>::Call(function, entityIndex, storage, unpackedArgs..., component);
+			Unpacker<Arguments...>::Call(manager, function, entityIndex, storage, unpackedArgs..., component);
+
+			if (std::is_same<requestedType, Entity>()) {
+
+			}
 		}
 	};
 }

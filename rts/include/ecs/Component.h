@@ -25,4 +25,9 @@ namespace ecs {
 		assert(id < MAX_COMPONENTS);
 		return id;
 	}
+
+	size_t Component<Entity>::Id() {
+		return 0;
+	}
+
 }

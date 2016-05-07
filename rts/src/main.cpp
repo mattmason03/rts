@@ -24,6 +24,8 @@
 
 #include "Game.h"
 #include "Input.h"
+#include "TimeTypes.h"
+#include "components\UnitComponents.h"
 
 namespace rx = rxcpp;
 namespace rxu = rxcpp::util;
@@ -49,8 +51,8 @@ void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat rot, int lin
 	glBegin(GL_LINE_LOOP);
 	for (i = 0; i <= lineAmount; i++) {
 		glVertex2f(
-			x + (radius * cos(i *  twicePi / lineAmount)),
-			y + (radius* sin(i * twicePi / lineAmount))
+			x + (radius * cos(i *  twicePi / lineAmount + rot)),
+			y + (radius* sin(i * twicePi / lineAmount + rot))
 			);
 	}
 	glEnd();
@@ -63,28 +65,38 @@ void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat rot, int lin
 }
 GLFWwindow* window;
 
-struct Position {
-	Position(double x, double y) : pos(x, y) {};
-	Position(glm::dvec2 vec) : pos(vec) {};
-	glm::dvec2 pos;
+class MovementSystem {
+public:
+	ecs::EntityManager* manager;
+	MovementSystem(ecs::EntityManager* manager) : manager{ manager } {};
+
+	void Update() {
+		manager->ForAll([this](ecs::Entity* entity, Transform* t, Destination* d) {
+			auto orientation = t->dir * glm::dvec3(1., 0., 0.);
+			auto angle = glm::angle(glm::normalize(orientation), glm::normalize(d->pos - t->pos));
+
+			if (angle > 0.001) {
+				if (angle > .1)
+					angle = .1;
+				t->dir *= glm::angleAxis(angle, glm::dvec3(0., 0., 1.));
+			}
+			else {
+				if (glm::distance(t->pos, d->pos) < .05) {
+					t->pos = d->pos;
+					entity->Remove<Destination>();
+				}
+				else {
+					t->pos += .05 * orientation;
+				}
+			}
+		});
+	}
+
 };
 
-struct Transform {
-	glm::dquat dir;
-	glm::dvec3 pos;
-};
-
-struct Sides {
-	Sides(int sides) :sides(sides) {};
-	int sides;
-};
-
-struct Destination {
-	glm::dvec3 pos;
-};
 
 class Selector {
-public: 
+public:
 	struct Selected {
 		bool selected = true;
 	};
@@ -100,9 +112,8 @@ public:
 		});
 		Input::rightClicks.subscribe([this](MouseInfo& info) {
 			for (auto& id : selectedEntities) {
-				auto pos = TranslatePos({ info.position.x, info.position.y });
-				Destination dest{ glm::dvec3(pos.x, pos.y, 0.) };
-				manager->Add<Destination>(*id, dest);
+				auto pos = TranslatePos(glm::dvec2(info.position));
+				manager->Add<Destination>(*id, Destination{ glm::dvec3(pos, 0.) });
 			}
 		});
 	}
@@ -125,8 +136,8 @@ public:
 			manager->Remove<Selected>(*id);
 		}
 		selectedEntities.clear();
-		manager->ForAll([this,&screenPos](ecs::Entity::Id *id, Transform *t) {
-			auto delta = -screenPos + glm::dvec2{ t->pos.x, t->pos.y };
+		manager->ForAll([this, &screenPos](ecs::Entity::Id *id, Transform *t) {
+			auto delta = -screenPos + glm::dvec2(t->pos);
 			auto distSquared = glm::dot(delta, delta);
 			if (distSquared < .1f) {
 				manager->Add<Selected>(*id);
@@ -136,34 +147,6 @@ public:
 	}
 };
 
-class MovementSystem {
-public:
-	ecs::EntityManager* manager;
-	MovementSystem(ecs::EntityManager* manager) : manager{ manager } {};
-
-	void Update() {
-		manager->ForAll([this](ecs::Entity::Id* id, Transform* t, Destination* d) {
-			auto orientation = t->dir * glm::dvec3(1., 0., 0.);
-			auto angle = glm::angle(glm::normalize(orientation), glm::normalize(d->pos - t->pos));
-
-			if (angle > 0.001) {
-				if (angle > .1)
-					angle = .1;
-				t->dir *= glm::angleAxis(angle, glm::dvec3(0, 0, 1));
-			}
-			else {
-				if (glm::distance(t->pos, d->pos) < .05) {
-					t->pos = d->pos;
-					manager->Remove<Destination>(*id);
-				}
-				else {
-					t->pos += .05 * orientation;
-				}
-			}
-		});
-	}
-
-};
 
 class TestGame : public Game {
 public:
@@ -186,19 +169,19 @@ public:
 		selector.Register();
 	}
 
-	void Update(Game::Duration gameTime, Game::Duration timeStep) override {
+	void Update(Duration gameTime, Duration timeStep) override {
 		movement.Update();
 		//if (std::chrono::duration_cast<std::chrono::seconds>(gameTime).count() > 10)
 		//	End();
 	}
 
-	void Render(Game::Duration gameTime) override {
+	void Render(Duration gameTime) override {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		manager.ForAll([this](ecs::Entity::Id *id, Transform *t, Sides *sides) {
+		manager.ForAll([this](ecs::Entity* entity, Transform *t, Sides *sides) {
 			glColor3f(0, 1, 1);
-			if (manager.Has<Selector::Selected>(*id)) {
+			if (entity->Has<Selector::Selected>()) {
 				glColor3f(1, 1, 0);
 			}
 			drawHollowCircle(t->pos.x, t->pos.y, .1f, glm::angle(t->dir), sides->sides);
@@ -212,10 +195,10 @@ public:
 int main(int argc, char** argv)
 {
 	spdlog::set_level(spdlog::level::err);
-
+	std::cout << std::is_same<ecs::Entity::Id, ecs::Entity>() << std::endl;
 	TestGame game;
-	game.renderStep = Game::Millis(20);
-	game.updateStep = Game::Millis(40);
+	game.renderStep = Millis(20);
+	game.updateStep = Millis(40);
 	setExeWorkingDir(argv);
 
 	glfwSetErrorCallback(error_callback);
@@ -241,36 +224,8 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	std::cout << glGetString(GL_VERSION) << std::endl;
-
-
-	//Batch2D batch;
-
-	//Texture2D smile(R"(..\resources\smile.png)");
-	//Texture2D square(R"(..\resources\red.png)");
-
-	//game.Play();
-
 	game.Play();
 
-	//while (!glfwWindowShouldClose(window))
-	//{
-	//	//batch.Begin();
-
-	//	//batch.SetTexture(smile);
-
-	//	//batch.Draw(glm::vec2(320, 320), glm::vec3(0,0,0), glm::vec2(1,1), glm::vec2(320, 320));
-	//	//batch.Draw(glm::vec2(320, 320), glm::vec3(0, 0, 0), glm::vec2(.5f, .5f), glm::vec2(320, 320));
-
-	//	//batch.End();
-
-
-	//	//drawHollowCircle(0, 0, .1f, .45f);
-	//	//drawHollowCircle(-.2, -.2, .1f, -.45f, 5);
-	//	//drawHollowCircle(.2, .2, .1f, .8f, 3);
-
-
-	//}
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);

@@ -72,7 +72,7 @@ void Game::End() {
 	gameOver_ = true;
 }
 
-Game::Duration Game::GameTime_() {
+Duration Game::GameTime_() {
 	return gameTime_ + std::chrono::duration_cast<Duration>((Clock::now() - nextUpdate_) * gameSpeedMultiplier);
 }
 
