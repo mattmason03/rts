@@ -84,6 +84,13 @@ TEST_F(EntityManagerTest, ComponentSimpleIteration) {
 	});
 }
 
+TEST_F(EntityManagerTest, TupleCreation) {
+	auto e = manager.Create(std::tuple<int, char>(9, 'a'));
+
+	EXPECT_EQ(e.Get<int>(), 9);
+	EXPECT_EQ(e.Get<char>(), 'a');
+}
+
 TEST_F(EntityManagerTest, ComponentFilter) {
 	manager.Create();
 

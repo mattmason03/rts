@@ -19,6 +19,9 @@ namespace ecs {
 		// Create an entity
 		Entity Create();
 
+		template <typename... Component>
+		Entity Create(std::tuple<Component...>& components);
+
 		bool Valid(Entity::Id id);
 
 		// Kill entity

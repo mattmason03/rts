@@ -23,6 +23,32 @@ namespace ecs {
 		return Entity(this, id);
 	}
 
+	
+	template <size_t idx, typename Tuple, typename... Components>
+	struct TuplePack;
+
+	template <size_t idx, typename Tuple, typename Component, typename... Components>
+	struct TuplePack<idx, Tuple, Component, Components...> {
+		static void AddComponent(const Entity& e, const Tuple& t) {
+			e.Add<Component>(std::get<idx>(t));
+			TuplePack<idx + 1, Tuple, Components...>::AddComponent(e, t);
+		}
+	};
+
+	template <size_t idx, typename Tuple, typename Component>
+	struct TuplePack<idx, Tuple, Component> {
+		static void AddComponent(const Entity& e, const Tuple& t) {
+			e.Add<Component>(std::get<idx>(t));
+		}
+	};
+
+	template <typename... Component>
+	Entity EntityManager::Create(std::tuple<Component...>& t) {
+		auto e = Create();
+		TuplePack<0, std::tuple<Component...>, Component...>::AddComponent(e, t);
+		return e;
+	}
+
 	bool EntityManager::Valid(Entity::Id id) {
 		uint32_t index = id.index();
 		return entityVersion_[index] == id.version();
