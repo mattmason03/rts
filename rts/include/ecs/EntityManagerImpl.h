@@ -87,7 +87,7 @@ namespace ecs {
 	template <typename Component>
 	Component& EntityManager::Get(Entity::Id id) {
 		assert(Has<Component>(id));
-		return *(Component*)componentStorage_[TypeRegistry<Component>::Id()]->Get(id.index());
+		return *reinterpret_cast<Component*>(componentStorage_[TypeRegistry<Component>::Id()]->Get(id.index()));
 	}
 
 	template <typename Component>
@@ -104,19 +104,19 @@ namespace ecs {
 
 	void EntityManager::Reset() {
 		entityFreeList_.clear();
-		for (size_t i = 0; i < capacity(); i++) {
+		for (uint32_t i = 0; i < capacity(); i++) {
 			entityMasks_[i].reset();
 			entityVersion_[i] = 0;
 			entityFreeList_.push_back(i);
 		}
 	}
 
-	size_t EntityManager::capacity() {
-		return entityMasks_.size();
+	uint32_t EntityManager::capacity() {
+		return static_cast<uint32_t>(entityMasks_.size());
 	}
 
-	size_t EntityManager::size() {
-		return capacity() - entityFreeList_.size();
+	uint32_t EntityManager::size() {
+		return capacity() - static_cast<uint32_t>(entityFreeList_.size());
 	}
 
 	template <typename Component>
@@ -144,7 +144,7 @@ namespace ecs {
 		}
 
 		template <typename Function, typename... UnpackedArgs>
-		static void Call(EntityManager * manager, Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
+		static void Call(EntityManager * manager, Function& function, uint32_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Call function with all unpacked arguments
 			function(*unpackedArgs...);
 		}
@@ -165,21 +165,35 @@ namespace ecs {
 		}
 
 		template <typename Function, typename... UnpackedArgs>
-		static void Call(EntityManager * manager, Function& function, size_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
+		static void Call(EntityManager * manager, Function& function, uint32_t entityIndex, std::vector<std::unique_ptr<ArrayStore>>& storage, UnpackedArgs... unpackedArgs) {
 			// Get array store for current component type
 			// Retrieve component for specified entity
 			requestedType* component;
-			if (std::is_same<requestedType, Entity>()) {
+			const auto isEntity = std::is_same<requestedType, Entity>();
+			if (isEntity) {
 				// needs cast to satisfy compiler, lol
-				// MEM LEAK!!!
-				component = (requestedType*)new Entity(manager, *(Entity::Id*)storage[0]->Get(entityIndex));
+				component = reinterpret_cast<requestedType*>(new Entity(manager, *(Entity::Id*)storage[0]->Get(entityIndex)));
 			}
 			else {
-				component = (requestedType*)(storage[TypeRegistry<requestedType>::Id()]->Get(entityIndex));
+				component = reinterpret_cast<requestedType*>((storage[TypeRegistry<requestedType>::Id()]->Get(entityIndex)));
 			}
+
+			//const requestedType& = [this]() {
+			//	const auto isEntity = std::is_same<requestedType, Entity>();
+			//	if (isEntity) {
+			//		// needs cast to satisfy compiler, lol
+			//		return reinterpret_cast<requestedType*>(new Entity(manager, *(Entity::Id*)storage[0]->Get(entityIndex)));
+			//	}
+			//	else {
+			//		return reinterpret_cast<requestedType*>((storage[TypeRegistry<requestedType>::Id()]->Get(entityIndex)));
+			//	}
+			//}();
 			
 			// Add unpacked component argument and recurse
 			Unpacker<Arguments...>::Call(manager, function, entityIndex, storage, unpackedArgs..., component);
+			if (isEntity) {
+				delete component;
+			}
 		}
 	};
 }

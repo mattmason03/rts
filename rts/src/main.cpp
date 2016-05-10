@@ -71,22 +71,25 @@ public:
 	MovementSystem(ecs::EntityManager* manager) : manager{ manager } {};
 
 	void Update() {
-		manager->ForAll([this](ecs::Entity& entity, Transform& t, Destination& d) {
+		manager->ForAll([this](ecs::Entity& entity, Transform& t, Destination& d, Radius& r) {
 			auto orientation = t.dir * glm::dvec3(1., 0., 0.);
-			auto angle = glm::angle(glm::normalize(orientation), glm::normalize(d.pos - t.pos));
+			auto angle = glm::orientedAngle(glm::normalize(glm::dvec2(orientation)), glm::normalize(glm::dvec2(d.pos - t.pos)));
+			//auto angle = glm::angle(glm::normalize(orientation), glm::normalize(d.pos - t.pos));
 
-			if (angle > 0.001) {
+			if (glm::abs(angle) > 0.001) {
 				if (angle > .1)
 					angle = .1;
+				else if (angle < -.1)
+					angle = -.1;
 				t.dir *= glm::angleAxis(angle, glm::dvec3(0., 0., 1.));
 			}
 			else {
-				if (glm::distance(t.pos, d.pos) < .05) {
+				if (glm::distance(t.pos, d.pos) < r.rad * .2) {
 					t.pos = d.pos;
 					entity.Remove<Destination>();
 				}
 				else {
-					t.pos += .05 * orientation;
+					t.pos += r.rad * .2 * orientation;
 				}
 			}
 		});
@@ -119,11 +122,10 @@ public:
 	}
 
 	glm::dvec2 TranslatePos(glm::dvec2 screenPos) {
-		glfwGetCursorPos(window, &screenPos.x, &screenPos.y);
-		screenPos /= 640;
-		screenPos.x -= 1;
-		screenPos.y -= 1;
-		screenPos.y *= -1;
+		//screenPos /= 640;
+		//screenPos.x -= 1;
+		//screenPos.y -= 1;
+		//screenPos.y *= -1;
 		return screenPos;
 	}
 
@@ -136,12 +138,12 @@ public:
 			manager->Remove<Selected>(id);
 		}
 		selectedEntities.clear();
-		manager->ForAll([this, &screenPos](ecs::Entity::Id& id, Transform& t) {
+		manager->ForAll([this, &screenPos](ecs::Entity& e, Transform& t, Radius& r) {
 			auto delta = -screenPos + glm::dvec2(t.pos);
 			auto distSquared = glm::dot(delta, delta);
-			if (distSquared < .1f) {
-				manager->Add<Selected>(id);
-				selectedEntities.push_back(id);
+			if (distSquared < r.rad * r.rad) {
+				e.Add<Selected>();
+				selectedEntities.push_back(e.GetId());
 			}
 		});
 	}
@@ -159,10 +161,12 @@ public:
 	void Load() override {
 		manager.Create()
 			.Add<Transform>(Transform{ glm::angleAxis(0., glm::dvec3(0, 0, 1)), glm::dvec3(0,0,0) })
-			.Add<Sides>(4);
+			.Add<Sides>(4)
+			.Add<Radius>(Radius{ 25. });
 		manager.Create()
-			.Add<Transform>(Transform{ glm::angleAxis(3.14, glm::dvec3(0, 0, 1)), glm::dvec3(.5,.5,0) })
-			.Add<Sides>(5);
+			.Add<Transform>(Transform{ glm::angleAxis(3.14, glm::dvec3(0, 0, 1)), glm::dvec3(320,320,0) })
+			.Add<Sides>(5)
+			.Add<Radius>(Radius{ 25. });
 
 		Input::RegisterCallbacks(window);
 
@@ -179,12 +183,12 @@ public:
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		manager.ForAll([this](ecs::Entity& entity, Transform& t, Sides& sides) {
+		manager.ForAll([this](ecs::Entity& entity, Transform& t, Sides& sides, Radius& r) {
 			glColor3f(0, 1, 1);
 			if (entity.Has<Selector::Selected>()) {
 				glColor3f(1, 1, 0);
 			}
-			drawHollowCircle(t.pos.x, t.pos.y, .1f, glm::angle(t.dir), sides.sides);
+			drawHollowCircle(t.pos.x, t.pos.y, r.rad, glm::angle(t.dir), sides.sides);
 		});
 
 		glfwSwapBuffers(window);
@@ -205,7 +209,7 @@ int main(int argc, char** argv)
 
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
-	window = glfwCreateWindow(1280, 1280, "Simple example", NULL, NULL);
+	window = glfwCreateWindow(1000, 1000, "Simple example", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -223,6 +227,7 @@ int main(int argc, char** argv)
 		std::cin >> x;
 		exit(EXIT_FAILURE);
 	}
+	gluOrtho2D(0, 1000, 1000, 0);
 
 	game.Play();
 

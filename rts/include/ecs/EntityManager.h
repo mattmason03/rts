@@ -59,10 +59,10 @@ namespace ecs {
 		void Reset();
 
 		// Total number of supported entities
-		size_t capacity();
+		uint32_t capacity();
 
 		// Total number of live entities
-		size_t size();
+		uint32_t size();
 
 		typedef std::bitset<MAX_COMPONENTS> ComponentMask;
 

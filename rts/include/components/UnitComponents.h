@@ -16,3 +16,7 @@ struct Sides {
 struct Destination {
 	glm::dvec3 pos;
 };
+
+struct Radius {
+	double rad;
+};
