@@ -29,7 +29,7 @@ namespace ecs {
 
 	template <size_t idx, typename Tuple, typename Component, typename... Components>
 	struct TuplePack<idx, Tuple, Component, Components...> {
-		static void AddComponent(const Entity& e, const Tuple& t) {
+		static void AddComponent(Entity& e, const Tuple& t) {
 			e.Add<Component>(std::get<idx>(t));
 			TuplePack<idx + 1, Tuple, Components...>::AddComponent(e, t);
 		}
@@ -37,7 +37,7 @@ namespace ecs {
 
 	template <size_t idx, typename Tuple, typename Component>
 	struct TuplePack<idx, Tuple, Component> {
-		static void AddComponent(const Entity& e, const Tuple& t) {
+		static void AddComponent(Entity& e, const Tuple& t) {
 			e.Add<Component>(std::get<idx>(t));
 		}
 	};

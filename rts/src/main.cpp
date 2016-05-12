@@ -63,6 +63,16 @@ void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat rot, int lin
 	glVertex2f(x + rad * cos(rot), y + rad * sin(rot));
 	glEnd();
 }
+
+void drawBox(glm::dvec2& a, glm::dvec2& b) {
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(a.x, a.y);
+	glVertex2f(b.x, a.y);
+	glVertex2f(b.x, b.y);
+	glVertex2f(a.x, b.y);
+	glEnd();
+}
+
 GLFWwindow* window;
 
 class MovementSystem {
@@ -107,6 +117,9 @@ public:
 	ecs::EntityManager* manager;
 	std::vector<ecs::Entity::Id> selectedEntities;
 
+	bool renderSelectionBox = false;
+	glm::dvec2 boxStart;
+
 	Selector(ecs::EntityManager* manager) : manager{ manager } {};
 
 	void Register() {
@@ -119,6 +132,19 @@ public:
 				manager->Add<Destination>(id, Destination{ glm::dvec3(pos, 0.) });
 			}
 		});
+
+		Input::leftClicks.subscribe([this](MouseInfo& info) {
+			renderSelectionBox = true;
+			boxStart = info.position;
+		});
+		Input::clickEvent.subscribe([this](MouseInfo& info) {
+			if (info.action == GLFW_RELEASE && info.button == GLFW_MOUSE_BUTTON_LEFT) {
+				renderSelectionBox = false;
+				if (glm::distance(info.position, boxStart) > 50) {
+					FindEntitiesBetween(boxStart, info.position);
+				}
+			}
+		});
 	}
 
 	glm::dvec2 TranslatePos(glm::dvec2 screenPos) {
@@ -129,25 +155,60 @@ public:
 		return screenPos;
 	}
 
+	void Render() {
+		if (renderSelectionBox) {
+			auto curPos = Input::GetCursorPos();
+			if (glm::distance(curPos, boxStart) > 50) {
+				glColor3f(0, 1.f, .2f);
+				drawBox(curPos, boxStart);
+			}
+		}
+	}
+
 	void HandleClick(MouseInfo& info) {
 		FindEntity(TranslatePos(info.position));
 	}
 
-	void FindEntity(glm::dvec2 screenPos) {
+	void FindEntitiesBetween(glm::dvec2& a, glm::dvec2& b) {
+		Clear();
+		glm::dvec2 min(glm::min(a.x, b.x), glm::min(a.y, b.y));
+		glm::dvec2 max(glm::max(a.x, b.x), glm::max(a.y, b.y));
+		manager->ForAll([this, &min, &max](ecs::Entity& e, Transform& t) {
+			if (t.pos.x > min.x && t.pos.x < max.x && t.pos.y > min.y && t.pos.y < max.y) {
+				Select(e);
+			}
+		});
+	}
+
+	void Clear() {
 		for (auto &id : selectedEntities) {
 			manager->Remove<Selected>(id);
 		}
 		selectedEntities.clear();
+	}
+
+	void Select(ecs::Entity& e) {
+		e.Add<Selected>();
+		selectedEntities.push_back(e.GetId());
+	}
+
+	void FindEntity(glm::dvec2 screenPos) {
+		Clear();
 		manager->ForAll([this, &screenPos](ecs::Entity& e, Transform& t, Radius& r) {
 			auto delta = -screenPos + glm::dvec2(t.pos);
 			auto distSquared = glm::dot(delta, delta);
 			if (distSquared < r.rad * r.rad) {
-				e.Add<Selected>();
-				selectedEntities.push_back(e.GetId());
+				Select(e);
 			}
 		});
 	}
 };
+
+std::tuple<Transform, Sides, Radius> unit(
+	Transform{ glm::angleAxis(0., glm::dvec3(0, 0, 1)), glm::dvec3(0,0,0) },
+	4,
+	Radius{ 25. }
+);
 
 
 class TestGame : public Game {
@@ -159,18 +220,15 @@ public:
 	TestGame() : selector(&manager), movement(&manager) {};
 
 	void Load() override {
-		manager.Create()
-			.Add<Transform>(Transform{ glm::angleAxis(0., glm::dvec3(0, 0, 1)), glm::dvec3(0,0,0) })
-			.Add<Sides>(4)
-			.Add<Radius>(Radius{ 25. });
-		manager.Create()
-			.Add<Transform>(Transform{ glm::angleAxis(3.14, glm::dvec3(0, 0, 1)), glm::dvec3(320,320,0) })
-			.Add<Sides>(5)
-			.Add<Radius>(Radius{ 25. });
+		manager.Create(unit);
 
 		Input::RegisterCallbacks(window);
 
 		selector.Register();
+		Input::keys.subscribe([this](const char key) { 
+			if (key == 'c')
+				manager.Create(unit).Get<Transform>().pos = glm::dvec3(Input::GetCursorPos(), 0.);
+		});
 	}
 
 	void Update(Duration gameTime, Duration timeStep) override {
@@ -190,6 +248,8 @@ public:
 			}
 			drawHollowCircle(t.pos.x, t.pos.y, r.rad, glm::angle(t.dir), sides.sides);
 		});
+
+		selector.Render();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
