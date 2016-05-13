@@ -81,6 +81,28 @@ public:
 	MovementSystem(ecs::EntityManager* manager) : manager{ manager } {};
 
 	void Update() {
+		manager->ForAll([this](ecs::Entity& current, Transform& currT) {
+			double radius = 200;
+			double count = 0;
+			glm::dvec3 alignment(0,0,0), cohesion(0, 0, 0), separation(0, 0, 0);
+			manager->ForAll([this, radius, &count, &current, &currT, &alignment, &cohesion, &separation](ecs::Entity& other, Transform& otherT) {
+				auto distance = glm::distance(currT.pos, otherT.pos);
+				if (distance < radius && current.GetId() != other.GetId()){
+					count++;
+					alignment += otherT.dir * glm::dvec3(1, 0, 0);
+					cohesion += otherT.pos;
+					auto invDist = (radius - distance) / radius;
+					separation += invDist * invDist * (otherT.pos - currT.pos);
+				}
+			});
+
+			auto align = glm::normalize(alignment / count);
+			cohesion /= count;
+			auto coh = glm::normalize(cohesion - currT.pos);
+			auto sep = separation / -count;
+
+			current.Add<glm::dvec3>(glm::normalize(align + 2. * coh + .1 * sep));
+		});
 		manager->ForAll([this](ecs::Entity& entity, Transform& t, Destination& d, Radius& r) {
 			auto orientation = t.dir * glm::dvec3(1., 0., 0.);
 			auto angle = glm::orientedAngle(glm::normalize(glm::dvec2(orientation)), glm::normalize(glm::dvec2(d.pos - t.pos)));
@@ -91,7 +113,7 @@ public:
 					angle = .1;
 				else if (angle < -.1)
 					angle = -.1;
-				t.dir *= glm::angleAxis(angle, glm::dvec3(0., 0., 1.));
+				t.dir = t.dir * glm::angleAxis(angle, glm::dvec3(0., 0., 1.));
 			}
 			else {
 				if (glm::distance(t.pos, d.pos) < r.rad * .2) {
@@ -220,7 +242,7 @@ public:
 	TestGame() : selector(&manager), movement(&manager) {};
 
 	void Load() override {
-		manager.Create(unit);
+		//manager.Create(unit);
 
 		Input::RegisterCallbacks(window);
 
@@ -242,11 +264,19 @@ public:
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		manager.ForAll([this](ecs::Entity& entity, Transform& t, Sides& sides, Radius& r) {
+			if (entity.Has<glm::dvec3>()) {
+				glColor3f(1, 0, 0);
+				glBegin(GL_LINES);
+				glVertex2f(t.pos.x, t.pos.y);
+				auto x = 2 * r.rad * entity.Get<glm::dvec3>() + t.pos;
+				glVertex2f(x.x, x.y);
+				glEnd();
+			}
 			glColor3f(0, 1, 1);
 			if (entity.Has<Selector::Selected>()) {
 				glColor3f(1, 1, 0);
 			}
-			drawHollowCircle(t.pos.x, t.pos.y, r.rad, glm::angle(t.dir), sides.sides);
+			drawHollowCircle(t.pos.x, t.pos.y, r.rad, glm::roll(t.dir), sides.sides);
 		});
 
 		selector.Render();

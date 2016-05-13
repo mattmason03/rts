@@ -198,7 +198,8 @@ namespace ecs {
 			const auto isEntity = std::is_same<requestedType, Entity>();
 			if (isEntity) {
 				// needs cast to satisfy compiler, lol
-				component = reinterpret_cast<requestedType*>(new Entity(manager, *(Entity::Id*)storage[0]->Get(entityIndex)));
+				auto e = new Entity(manager, *(Entity::Id*)storage[TypeRegistry<Entity::Id>::Id()]->Get(entityIndex));
+				component = reinterpret_cast<requestedType*>(e);
 			}
 			else {
 				component = reinterpret_cast<requestedType*>((storage[TypeRegistry<requestedType>::Id()]->Get(entityIndex)));
