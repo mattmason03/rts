@@ -62,6 +62,8 @@ void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat rot, int lin
 	float rad = radius * 1.2f;
 	glVertex2f(x + rad * cos(rot), y + rad * sin(rot));
 	glEnd();
+	std::vector<int> vec{ 1,2,3,4 };
+	
 }
 
 void drawBox(glm::dvec2& a, glm::dvec2& b) {
