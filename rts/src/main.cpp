@@ -26,6 +26,7 @@
 #include "Input.h"
 #include "TimeTypes.h"
 #include "components\UnitComponents.h"
+#include "Grid.h"
 
 namespace rx = rxcpp;
 namespace rxu = rxcpp::util;
@@ -62,8 +63,6 @@ void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat rot, int lin
 	float rad = radius * 1.2f;
 	glVertex2f(x + rad * cos(rot), y + rad * sin(rot));
 	glEnd();
-	std::vector<int> vec{ 1,2,3,4 };
-	
 }
 
 void drawBox(glm::dvec2& a, glm::dvec2& b) {
@@ -80,23 +79,30 @@ GLFWwindow* window;
 class MovementSystem {
 public:
 	ecs::EntityManager* manager;
-	MovementSystem(ecs::EntityManager* manager) : manager{ manager } {};
+	Grid<ecs::Entity>* grid;
+	MovementSystem(ecs::EntityManager* manager, Grid<ecs::Entity>* grid) : manager{ manager }, grid{ grid } {};
+	int gridChecks = 0, forEach = 0;
 
 	void Update() {
 		manager->ForAll([this](ecs::Entity& current, Transform& currT) {
 			double radius = 200;
 			double count = 0;
 			glm::dvec3 alignment(0,0,0), cohesion(0, 0, 0), separation(0, 0, 0);
-			manager->ForAll([this, radius, &count, &current, &currT, &alignment, &cohesion, &separation](ecs::Entity& other, Transform& otherT) {
-				auto distance = glm::distance(currT.pos, otherT.pos);
-				if (distance < radius && current.GetId() != other.GetId()){
-					count++;
-					alignment += otherT.dir * glm::dvec3(1, 0, 0);
-					cohesion += otherT.pos;
-					auto invDist = (radius - distance) / radius;
-					separation += invDist * invDist * (otherT.pos - currT.pos);
+			auto collidingSquares = grid->Within(currT.pos, radius);
+			for (auto& gridSquare : collidingSquares) {
+				for (auto& entity : *gridSquare) {
+					gridChecks++;
+					auto otherT = entity.Get<Transform>();
+					auto distance = glm::distance(currT.pos, otherT.pos);
+					if (distance < radius && current.GetId() != entity.GetId()) {
+						count++;
+						alignment += otherT.dir * glm::dvec3(1, 0, 0);
+						cohesion += otherT.pos;
+						auto invDist = (radius - distance) / radius;
+						separation += invDist * invDist * (otherT.pos - currT.pos);
+					}
 				}
-			});
+			}
 
 			auto align = glm::normalize(alignment / count);
 			cohesion /= count;
@@ -105,6 +111,12 @@ public:
 
 			current.Add<glm::dvec3>(glm::normalize(align + 2. * coh + .1 * sep));
 		});
+		
+		auto size = manager->size();
+		std::cout << "units: " << manager->size() << " grid: " << gridChecks << " forEach: " << size * size << std::endl;
+		gridChecks = 0;
+		forEach = 0;
+
 		manager->ForAll([this](ecs::Entity& entity, Transform& t, Destination& d, Radius& r) {
 			auto orientation = t.dir * glm::dvec3(1., 0., 0.);
 			auto angle = glm::orientedAngle(glm::normalize(glm::dvec2(orientation)), glm::normalize(glm::dvec2(d.pos - t.pos)));
@@ -240,8 +252,9 @@ public:
 	ecs::EntityManager manager;
 	Selector selector;
 	MovementSystem movement;
+	Grid<ecs::Entity> positionGrid;
 
-	TestGame() : selector(&manager), movement(&manager) {};
+	TestGame() : selector(&manager), movement(&manager, &positionGrid), positionGrid({ 10, 10 }, { 0,0 }, { 1000,1000 }) {};
 
 	void Load() override {
 		//manager.Create(unit);
@@ -256,6 +269,10 @@ public:
 	}
 
 	void Update(Duration gameTime, Duration timeStep) override {
+		positionGrid.Clear();
+		manager.ForAll([this](ecs::Entity entity, Transform& t) {
+			positionGrid.Insert(entity, t.pos);
+		});
 		movement.Update();
 		//if (std::chrono::duration_cast<std::chrono::seconds>(gameTime).count() > 10)
 		//	End();
@@ -294,7 +311,7 @@ int main(int argc, char** argv)
 	std::cout << std::is_same<ecs::Entity::Id, ecs::Entity>() << std::endl;
 	TestGame game;
 	game.renderStep = Millis(20);
-	game.updateStep = Millis(40);
+	game.updateStep = Millis(200);
 	setExeWorkingDir(argv);
 
 	glfwSetErrorCallback(error_callback);
